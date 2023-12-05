@@ -1,13 +1,13 @@
 global:
-  scrape_interval: 15s #Scrape interval to every 15 seconds.
-  evaluation_interval: 15s #Evaluate rules every 15 seconds.
+  scrape_interval: 5s #Scrape interval to every 15 seconds.
+  evaluation_interval: 5s #Evaluate rules every 15 seconds.
   
 scrape_configs:
   - job_name: "prometheus"
     # metrics_path defaults to '/metrics'
     static_configs:
-      - targets: ["localhost:9090"]
+      - targets: ["localhost:29090"]
 
   - job_name: "cadvisor"
     static_configs:
-      - targets: ["localhost:8080"]
+      - targets: ["10.5.0.1:28080"]

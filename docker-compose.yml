@@ -3,9 +3,9 @@ services:
   cadvisor:
     container_name: cadvisor
     image: gcr.io/cadvisor/cadvisor:latest
-    network_mode: "host"
     ports:
-      - "8080:8080"
+      - "10.5.0.1:28080:8080"
+      - "127.0.0.1:28080:8080"
     volumes: 
       - "/:/rootfs"
       - "/var/run:/var/run"
@@ -15,36 +15,66 @@ services:
     privileged: true
     devices: 
       - "/dev/kmsg"
+    command:
+      - '--housekeeping_interval=1s'
+    
+    networks:
+      default:
+        ipv4_address: 10.5.0.2
 
   prometheus:
-    container_name: prometheus
+    container_name: prometheus-cadvisor
     image: prom/prometheus:latest
-    network_mode: "host"
+    # network_mode: "host"
     ports:
-      - "9090:9090"
+      - "10.5.0.1:29090:9090"
+      - "127.0.0.1:29090:9090"
     volumes: 
       - "./prometheus.yml:/etc/prometheus/prometheus.yml"
+      - ./prometheus_data:/prometheus:z
     privileged: true
-    depends_on:
-      - cadvisor
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=360d'
+    # depends_on:
+    #   - cadvisor
+    networks:
+      default:
+        ipv4_address: 10.5.0.3
 
   grafana:
-    container_name: grafana
+    container_name: grafana-cadvisor
     image: grafana/grafana:latest
-    network_mode: "host"
+    # network_mode: "host"
     ports:
-      - "3000:3000"
+      - "10.5.0.1:23000:3000"
+      - "127.0.0.1:23000:3000"
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
       - DS_PROMETHEUS=prometheus
     volumes: 
-      - "grafana-data:/var/lib/grafana"
+      - "./grafana-data:/var/lib/grafana:z"
       - "./datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml"
       - "./dashboard.json:/var/lib/grafana/dashboards/dashboard.json"
       - "./default.yaml:/etc/grafana/provisioning/dashboards/default.yaml"
     privileged: true
-    depends_on:
-      - prometheus
+    # depends_on:
+    #   - prometheus
+    networks:
+      default:
+        ipv4_address: 10.5.0.4
 
 volumes:
   grafana-data:
+
+networks:
+  default:
+    name: cadvisor-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
+          gateway: 10.5.0.1
